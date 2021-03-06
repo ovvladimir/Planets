@@ -7,21 +7,44 @@ import pygame
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+        self.image = background
         self.rect = self.image.get_rect()
-        self.image.blit(background, self.rect)
-        # self.image.fill((0, 0, 0))
-        self.stars_list = []
-        for _ in range(150):
-            self.stars_list.append(pygame.draw.circle(
-                self.image, (128, 128, 0),
-                (random.randrange(SCREEN_WIDTH), random.randrange(SCREEN_HEIGHT)),
-                random.randint(1, 2)))
+
+
+class Stars(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+
+        self.speed = random.randrange(5, 11, 5) * .1
+        self.size = random.randint(1, 2)
+        self.image = pygame.Surface((self.size * 2, self.size * 2))
+        pygame.draw.circle(self.image, pygame.Color(
+            random.choice(COLOR)), [self.size, self.size], self.size)
+        self.rect = self.image.get_rect()
+        self.position = vec(random.randrange(SCREEN_WIDTH), random.randrange(SCREEN_HEIGHT))
+        self.velocity = vec()
+        self.angle = 0
+
+    def update(self):
+        if self.position.y < 0:
+            self.position.y = SCREEN_HEIGHT
+        elif self.position.y > SCREEN_HEIGHT:
+            self.position.y = 0
+        elif self.position.x > SCREEN_WIDTH:
+            self.position.x = 0
+        elif self.position.x < 0:
+            self.position.x = SCREEN_WIDTH
+        self.angle = (self.angle + .04) % 360
+        self.velocity = vec(0, -self.speed).rotate(-self.angle)
+        self.position += self.velocity
+        self.rect.center = self.position
 
 
 class Sun(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
+
         self.images = sun_image
         self.index = 0
         self.range = len(self.images)
@@ -37,6 +60,7 @@ class Sun(pygame.sprite.Sprite):
 class Planets(pygame.sprite.Sprite):
     def __init__(self, image, position, angle, speed):
         pygame.sprite.Sprite.__init__(self)
+
         self.angle = angle
         self.x, self.y = position
         self.speed = speed
@@ -63,10 +87,19 @@ pygame.display.set_caption('Solar System')
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.NOFRAME)
 FPS = 120
 clock = pygame.time.Clock()
+COLOR = [
+    'khaki1', 'khaki2', 'khaki3', 'khaki4',
+    'LightGoldenrod1', 'LightGoldenrod2', 'LightGoldenrod3', 'LightGoldenrod4',
+    'LightYellow2', 'LightYellow3', 'LightYellow4', 'yellow2', 'yellow3', 'yellow4',
+    'gold2', 'gold3', 'gold4', 'goldenrod1', 'goldenrod2', 'goldenrod3', 'goldenrod4',
+    'DarkGoldenrod1', 'DarkGoldenrod2', 'DarkGoldenrod3', 'DarkGoldenrod4']
+vec = pygame.math.Vector2
 
 all_sprite = pygame.sprite.Group()
-bg = Background()
-all_sprite.add(bg)
+all_sprite.add(Background())
+
+for _ in range(100):
+    all_sprite.add(Stars())
 
 planets_image = []
 planets_path = os.path.join(path, 'images', 'planets')
@@ -87,8 +120,7 @@ sun_path = os.path.join(path, 'images', 'sun')
 for file_name in os.listdir(sun_path):
     im = pygame.image.load(os.path.join(sun_path, file_name))
     sun_image.append(im)
-sun = Sun()
-all_sprite.add(sun)
+all_sprite.add(Sun())
 
 while True:
     e = pygame.event.poll()
